@@ -158,8 +158,8 @@ class Chatbot:
         """
         ########################################################################
         #                          START OF YOUR CODE                          #
-        ########################################################################                                             
-        return [] # TODO: delete and replace this line
+        ########################################################################
+        return re.findall(r'"(.*)"', user_input) # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -200,7 +200,8 @@ class Chatbot:
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################                                                 
-        return [] # TODO: delete and replace this line
+        idxs = [i for i, entry in enumerate(self.titles) if re.search(title, entry[0])]
+        return idxs # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -259,8 +260,12 @@ class Chatbot:
         """
         ########################################################################
         #                          START OF YOUR CODE                          #
-        ########################################################################                                                 
-        return [] # TODO: delete and replace this line
+        ########################################################################
+        movies = [self.titles[i] for i in candidates]                                                 
+        idxs = [i for i, movie in enumerate(movies) 
+                   if (re.search(clarification, movie[0]) or re.search(clarification, movie[1]))]
+        results = [candidates[i] for i in idxs]
+        return results # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
