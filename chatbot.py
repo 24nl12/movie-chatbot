@@ -42,12 +42,9 @@ class Chatbot:
         chatbot can do and how the user can interact with it.
         """
         return """
-        Your task is to implement the chatbot as detailed in the HW6
-        instructions (README.md).
-
-        To exit: write ":quit" (or press Ctrl-C to force the exit)
-
-        TODO: Write the description for your own chatbot here in the `intro()` function.
+        Hi! I'm ChatMNK. I'm going to reccommend the perfect movie. To do that, 
+        I need you to tell me about some movies you've liked and disliked. Tell 
+        me about a movie you've seen!
         """
 
     def greeting(self):
@@ -71,7 +68,7 @@ class Chatbot:
         # TODO: Write a short farewell message                                 #
         ########################################################################
 
-        goodbye_message = "Have a nice day!"
+        goodbye_message = "It was fun chatting with you! I hope you enjoy my reccommendation."
 
         ########################################################################
         #                          END OF YOUR CODE                            #
