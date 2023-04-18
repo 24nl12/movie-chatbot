@@ -5,7 +5,7 @@ import re
 import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import linear_model
-import nltk 
+from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict, Counter
 from typing import List, Dict, Union, Tuple
 
@@ -16,7 +16,7 @@ class Chatbot:
 
     def __init__(self):
         # The chatbot's default name is `moviebot`.
-        self.name = 'moviebot' # TODO: Give your chatbot a new name.
+        self.name = 'ChatMNK' # TODO: Give your chatbot a new name.
 
         # This matrix has the following shape: num_movies x num_users
         # The values stored in each row i and column j is the rating for
@@ -29,7 +29,9 @@ class Chatbot:
         # Train the classifier
         self.train_logreg_sentiment_classifier()
 
-        # TODO: put any other class variables you need here 
+        # TODO: put any other class variables you need here
+        self.count_vectorizer = None
+        self.model = None 
 
     ############################################################################
     # 1. WARM UP REPL                                                          #
@@ -261,9 +263,8 @@ class Chatbot:
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################
-        movies = [self.titles[i] for i in candidates]                                                 
-        idxs = [i for i, movie in enumerate(movies) 
-                   if (re.search(clarification, movie[0]) or re.search(clarification, movie[1]))]
+        idxs = [i for i, idx in enumerate(candidates) 
+                   if (re.search(clarification, self.titles[idx][0]) or re.search(clarification, self.titles[idx][1]))]
         results = [candidates[i] for i in idxs]
         return results # TODO: delete and replace this line
         ########################################################################
@@ -304,8 +305,16 @@ class Chatbot:
         """
         ########################################################################
         #                          START OF YOUR CODE                          #
-        ########################################################################                                                  
-        return 0 # TODO: delete and replace this line
+        ########################################################################
+        tokens = RegexpTokenizer(r'\w+').tokenize(user_input)
+        neg_tok_count, pos_tok_count = 0, 0
+        for token in tokens:
+            current = self.sentiment.get(token)
+            if current == 'pos': pos_tok_count += 1
+            elif current == 'neg': neg_tok_count += 1                                               
+        if pos_tok_count > neg_tok_count: return 1
+        elif neg_tok_count > pos_tok_count: return -1
+        return 0
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -329,17 +338,26 @@ class Chatbot:
             - Our solution uses less than about 10 lines of code. Your solution might be a bit too complicated.
             - We achieve greater than accuracy 0.7 on the training dataset. 
         """ 
-        #load training data  
-        texts, y = util.load_rotten_tomatoes_dataset()
-
-        self.model = None #variable name that will eventually be the sklearn Logistic Regression classifier you train 
-        self.count_vectorizer = None #variable name will eventually be the CountVectorizer from sklearn 
-
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################                                                
         
-        pass # TODO: delete and replace this line
+        #load training data  
+        texts, y = util.load_rotten_tomatoes_dataset()
+        y_labels = [1 if x == 'Fresh' else -1 for x in y]
+        
+        #use the training data to create the vocab 
+        self.count_vectorizer = CountVectorizer(min_df=20, #only look at words that occur in at least 20 docs
+                                    stop_words='english', # remove english stop words
+                                    ) 
+        X = self.count_vectorizer.fit_transform(texts).toarray()
+        Y = np.array(y_labels)
+
+        logistic_regression_classifier = sklearn.linear_model.LogisticRegression(penalty=None)
+
+        self.model = logistic_regression_classifier.fit(X, Y)
+        acc = float(self.model.score(X, Y))
+        # print(acc)
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -419,8 +437,13 @@ class Chatbot:
         """ 
         ########################################################################
         #                          START OF YOUR CODE                          #
-        ########################################################################                                                    
-        return [""]  # TODO: delete and replace this line
+        ########################################################################
+        user_input = np.zeros(len(self.ratings))
+        for key in user_ratings:
+            user_input[key] = user_ratings.get(key)
+        recs = util.recommend(user_input, self.ratings, num_return)
+        result = [self.titles[i][0] for i in recs]                                                    
+        return result
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
