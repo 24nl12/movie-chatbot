@@ -117,8 +117,21 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
+        prediction = self.predict_sentiment_rule_based(line)
+        curr_movie = self.extract_titles(line)
+        if len(curr_movie) == 1:
+            if prediction > 0:
+                response = "Oh, you liked '{}'? Tell me about some other movies.".format(curr_movie[0])
+            elif prediction < 0:
+                response = "Wow, you really didn't like '{}'. What about some other movies?".format(curr_movie[0])
+            else:
+                response = "Hmm, I can't really tell whether you liked '{}' or not. Can you tell me a little more about your thoughts on it?".format(curr_movie[0])
+        elif len(curr_movie) == 0:
+            response = "Why don't you tell me about a movie you've seen recently?"
+        else:
+            response = "You've talked about a few movies. Why don't tell me your thoughts on just one of them."
 
-        response = "I (the chatbot) processed '{}'".format(line)
+        # response = "I (the chatbot) processed '{}'".format(line)
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -287,7 +300,7 @@ class Chatbot:
 
         This function should return 
         -1 (negative sentiment): if neg_tok_count > pos_tok_count
-        0 (neural): if neg_tok_count is equal to pos_tok_count
+        0 (neutral): if neg_tok_count is equal to pos_tok_count
         +1 (postive sentiment): if neg_tok_count < pos_tok_count
 
         Example:
