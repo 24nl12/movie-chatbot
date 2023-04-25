@@ -16,7 +16,7 @@ class Chatbot:
 
     def __init__(self):
         # The chatbot's default name is `moviebot`.
-        self.name = 'ChatMNK' # TODO: Give your chatbot a new name.
+        self.name = 'Chatstopher Nolan' # TODO: Give your chatbot a new name.
 
         # This matrix has the following shape: num_movies x num_users
         # The values stored in each row i and column j is the rating for
@@ -26,12 +26,16 @@ class Chatbot:
         # Load sentiment words 
         self.sentiment = util.load_sentiment_dictionary('data/sentiment.txt')
 
-        # Train the classifier
-        self.train_logreg_sentiment_classifier()
-
         # TODO: put any other class variables you need here
         self.count_vectorizer = None
-        self.model = None 
+        self.model = None
+        self.curr_movie = []
+        self.movie_count = 0
+        self.recs = []
+        self.user_ratings = dict()
+
+        # Train the classifier
+        self.train_logreg_sentiment_classifier() 
 
     ############################################################################
     # 1. WARM UP REPL                                                          #
@@ -44,9 +48,9 @@ class Chatbot:
         chatbot can do and how the user can interact with it.
         """
         return """
-        Hi! I'm ChatMNK. I'm going to reccommend the perfect movie. To do that, 
-        I need you to tell me about some movies you've liked and disliked. Tell 
-        me about a movie you've seen!
+        Hi! I'm Chatstopher Nolan. I'm going to reccommend the perfect movie. 
+        To do that, I need you to tell me about some movies you've liked and disliked. 
+        Tell me about a movie you've seen!
         """
 
     def greeting(self):
@@ -55,7 +59,11 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "How can I help you?"
+        greeting_message = """Before we begin, I would like to know: How did you like any of the following movies?
+        1) 'Inception' 2) 'Interstellar', 3) 'Dark Knight Rises'
+        * Make sure to tell me about ONE movie at a time *
+        """
+
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -117,27 +125,59 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
-        prediction = self.predict_sentiment_rule_based(line)
-        curr_movie = self.extract_titles(line)
-        if len(curr_movie) == 1:
-            if prediction > 0:
-                response = "Oh, you liked '{}'? Tell me about some other movies.".format(curr_movie[0])
-            elif prediction < 0:
-                response = "Wow, you really didn't like '{}'. What about some other movies?".format(curr_movie[0])
-            else:
-                response = "Hmm, I can't really tell whether you liked '{}' or not. Can you tell me a little more about your thoughts on it?".format(curr_movie[0])
-        elif len(curr_movie) == 0:
-            response = "Why don't you tell me about a movie you've seen recently?"
-        else:
-            response = "You've talked about a few movies. Why don't tell me your thoughts on just one of them."
+        pred = self.predict_sentiment_rule_based(line)
+        temp = []
+        for title in self.extract_titles(line):
+            temp.extend(self.find_movies_idx_by_title(title))
+        if len(self.curr_movie) == 0:
+            self.curr_movie = temp
+        if self.movie_count < 5:
+            if len(self.curr_movie) == 1:
+                title = self.titles[self.curr_movie[0]][0] 
+                if pred > 0:
+                    self.movie_count += 1
+                    self.user_ratings[self.curr_movie[0]] = pred
+                    self.curr_movie = []
+                    response = "Oh, you liked '{}'? Tell me about some other movies.".format(title)
+                    if self.movie_count == 5:
+                        response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
 
-        # response = "I (the chatbot) processed '{}'".format(line)
+                elif pred < 0:
+                    self.movie_count += 1
+                    self.user_ratings[self.curr_movie[0]] = pred
+                    self.curr_movie = []
+                    response = "Wow, you really didn't like '{}'. What about some other movies?".format(title)
+                    if self.movie_count == 5:
+                        response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
+                else:
+                    response = "Hmm, I can't really tell whether you liked '{}' or not. Can you tell me a little more about your thoughts on it?".format(title)
+            elif len(self.curr_movie) == 0:
+                response = "Why don't you tell me about a movie you've seen recently?"
+            else:
+                movies = ""
+                self.curr_movie = self.disambiguate_candidates(line, self.curr_movie)
+                if len(self.curr_movie) > 1:
+                    for movie in self.curr_movie:
+                        movies += self.titles[movie][0] + ", "
+                    response = "Which of these movies did you mean? '{}'.".format(movies[:-2])
+                else:
+                    response = "You're talking about '{}'. Can I ask whether you liked it or not?".format(self.titles[self.curr_movie[0]][0])
+        else:
+            if len(self.recs) == 0:
+                self.recs = self.recommend_movies(self.user_ratings, num_return=100)
+                response = "I'd recommend '{}'. I think you'll like it. Would you like another recommendation? Type :quit if you're done!".format(self.recs[0])
+                self.recs.pop(0)
+            elif ":quit" in line:
+                response = self.goodbye()
+            else:
+                response = "I'd also recommend '{}'. Would you like another recommendation?. Type :quit if you're done!".format(self.recs[0])
+                self.recs.pop(0)
 
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
         return response
-
+    
     def extract_titles(self, user_input: str) -> list:
         """Extract potential movie titles from the user input.
 
@@ -174,7 +214,7 @@ class Chatbot:
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################
-        return re.findall(r'"(.*)"', user_input) # TODO: delete and replace this line
+        return re.findall(r'"(.*?)"', user_input) # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -215,7 +255,7 @@ class Chatbot:
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################                                                 
-        idxs = [i for i, entry in enumerate(self.titles) if re.search(title, entry[0])]
+        idxs = [i for i, entry in enumerate(self.titles) if re.search(re.escape(title), entry[0], re.IGNORECASE)]
         return idxs # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -277,8 +317,10 @@ class Chatbot:
         #                          START OF YOUR CODE                          #
         ########################################################################
         idxs = [i for i, idx in enumerate(candidates) 
-                   if (re.search(clarification, self.titles[idx][0]) or re.search(clarification, self.titles[idx][1]))]
+                   if (re.search(clarification, self.titles[idx][0], re.IGNORECASE) or re.search(clarification, self.titles[idx][1], re.IGNORECASE))]
         results = [candidates[i] for i in idxs]
+        if len(results) == 0:
+            return candidates
         return results # TODO: delete and replace this line
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -322,7 +364,7 @@ class Chatbot:
         tokens = RegexpTokenizer(r'\w+').tokenize(user_input)
         neg_tok_count, pos_tok_count = 0, 0
         for token in tokens:
-            current = self.sentiment.get(token)
+            current = self.sentiment.get(token.lower())
             if current == 'pos': pos_tok_count += 1
             elif current == 'neg': neg_tok_count += 1                                               
         if pos_tok_count > neg_tok_count: return 1
@@ -409,7 +451,9 @@ class Chatbot:
         ########################################################################
         #                          START OF YOUR CODE                          #
         ########################################################################                                             
-        return 0 # TODO: delete and replace this line
+        current = self.count_vectorizer.transform([user_input]).toarray()
+        if sum(current[0]) == 0: return 0
+        return self.model.predict(current)[0]
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
