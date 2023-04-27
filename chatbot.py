@@ -29,13 +29,14 @@ class Chatbot:
         # TODO: put any other class variables you need here
         self.count_vectorizer = None
         self.model = None
-        self.curr_movie = [] # movie that is currently being referenced
-        self.movie_count = 0 # number of movies that we have user ratings for
-        self.recs = [] # list of recommendations based on user ratings
-        self.user_ratings = dict() # dictionary for storing user ratings
+        self.curr_movie = []
+        self.movie_count = 0
+        self.recs = []
+        self.user_ratings = dict()
+        self.emotion_string = ""
 
         # Train the classifier
-        self.train_logreg_sentiment_classifier() # train the classifier
+        self.train_logreg_sentiment_classifier() 
 
     ############################################################################
     # 1. WARM UP REPL                                                          #
@@ -60,8 +61,8 @@ class Chatbot:
         ########################################################################
 
         greeting_message = """Before we begin, I would like to know: How did you like any of the following movies?
-        1) 'Inception' 2) 'Interstellar', 3) 'Dark Knight Rises'
-        * Make sure to tell me about ONE movie at a time *
+        1) 'Inception', 2) 'Interstellar', 3) 'Dark Knight Rises'
+        * Make sure to tell me about ONE movie at a time // Also feel free to tell us about a different movie. *
         """
 
 
@@ -78,7 +79,7 @@ class Chatbot:
         # TODO: Write a short farewell message                                 #
         ########################################################################
 
-        goodbye_message = "It was fun chatting with you! I hope you enjoy my recommendations."
+        goodbye_message = "It was fun chatting with you! I hope you enjoy my reccommendations."
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -125,7 +126,7 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
-        pred = self.predict_sentiment_rule_based(line) # predict sentiment based on line
+        pred = self.predict_sentiment_rule_based(line)
         temp = []
         for title in self.extract_titles(line):
             # get indexes of all relevant movies from line
@@ -138,11 +139,10 @@ class Chatbot:
                 # if there are no movies being referenced currently and there are no movies within
                 # double quotes in the current line, check if there are movies titles in the current
                 # line that aren't within double quotes.
-                self.curr_movie = self.function1(line)
+                self.curr_movie = self.ID_movies(line)
                 # since some movie titles contain sentiment words (eg. 10 Things I Hate About You),
                 # set pred = 0. This means that the chatbot will ask for the user's thoughts on the 
-                # movie even if they were already provided as part of the current line.  
-                pred = 0
+                # movie even if they were already provided as part of the current line. 
         if ":quit" in line:
             response = self.goodbye()
         # ask for user's thoughts on movies until we have ratings for 5
@@ -154,12 +154,14 @@ class Chatbot:
                     self.movie_count += 1
                     # store the rating
                     self.user_ratings[self.curr_movie[0]] = pred
-                    # reset list of movies being referenced 
+                    # reset list of movies being referenced
                     self.curr_movie = []
-                    response = "Oh, you like '{}'? Tell me about some other movies.".format(title)
+                    response = "Oh, you liked '{}'? Tell me about some other movies.".format(title)
                     # transition response if we reach 5 user ratings
                     if self.movie_count == 5:
-                        response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
+                        response = """I'll now recommend you a movie. 
+                        I can also narrow down some genres if you tell me how you feel today. Type "Yes" if you want this option. 
+                        Type :quit if you don't want a recommendation."""
 
                 elif pred < 0:
                     self.movie_count += 1
@@ -167,31 +169,48 @@ class Chatbot:
                     self.user_ratings[self.curr_movie[0]] = pred
                     # reset list of movies being referenced
                     self.curr_movie = []
-                    response = "Wow, you really don't like '{}'. What about some other movies?".format(title)
+                    response = "Wow, you really didn't like '{}'. What about some other movies?".format(title)
                     # transition response if we reach 5 user ratings
                     if self.movie_count == 5:
-                        response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
+                        response = """I'll now recommend you a movie. 
+                        I can also narrow down some genres if you tell me how you feel today. Type "Yes" if you want this option. 
+                        Type :quit if you don't want a recommendation."""
                 else:
-                    # continue asking about current movie if we can't make a prediction from line 
-                    response = "Hmm, I can't really tell whether you like '{}' or not. Can you tell me a little more about your thoughts on it?".format(title)
+                    # continue asking about current movie if we can't make a prediction from line
+                    response = "Hmm, I can't really tell whether you liked '{}' or not. Can you tell me a little more about your thoughts on it?".format(title)
             elif len(self.curr_movie) == 0:
                 # if there is no reference movie, ask for one.
                 response = "Why don't you tell me about a movie you've seen recently?"
             else:
-                # if there is more than one movie, determine which one the user is talking about 
+                # if there is more than one movie, determine which one the user is talking about
+                movies = ""
                 self.curr_movie = self.disambiguate_candidates(line, self.curr_movie)
                 if len(self.curr_movie) > 1:
-                    response = "Which of these movies did you mean? '{}'.".format(", ".join(self.titles[i][0] for i in self.curr_movie))
+                    for movie in self.curr_movie:
+                        movies += self.titles[movie][0] + ", "
+                    response = "Which of these movies did you mean? '{}'.".format(movies[:-2])
                 else:
                     response = "You're talking about '{}'. Can I ask whether you liked it or not?".format(self.titles[self.curr_movie[0]][0])
-        # Once we have 5 user ratings, generate recommendations.
         else:
             if len(self.recs) == 0:
-                # generate recommendations
-                self.recs = self.recommend_movies(self.user_ratings, num_return=100)
-                # recommend the top recommendation
-                response = "I'd recommend '{}'. I think you'll like it. Would you like another recommendation? Type :quit if you're done!".format(self.recs[0])
-                self.recs.pop(0)
+                if "yes" in line.lower():
+                    # if the user wants recommendations based on emotions, 
+                    response = """Okay, How are you feeling today? 
+                    1) Happy, 2) Sad, 3) Angry, 4) Bored 
+                    *Type Number*"""
+                elif line == "1" or line == "2" or line == "3" or line == "4":
+                    self.recs = self.rec_emotion_based(self.user_ratings, int(line), 100)
+                    # gets recommendations based on the emotion_input
+                    response = self.emotion_string + """\n Nothing better to match your mood than '{}'! \n Would you like another recommendation? Type :quit if you're done!""".format(self.recs[0])
+                    self.recs.pop(0)
+                elif "No" in line.lower(): 
+                    # if the user does not want recommendations based on emotions, proceed to recommend_movies
+                    self.recs = self.recommend_movies(self.user_ratings, num_return=100)
+                    response = "I'd recommend '{}'. I think you'll like it. Would you like another recommendation? Type :quit if you're done!".format(self.recs[0])
+                    self.recs.pop(0)
+                else: response = "Type Yes/ No OR 1/2/3/4."
+            elif ":quit" in line:
+                response = self.goodbye()
             else:
                 response = "I'd also recommend '{}'. Would you like another recommendation?. Type :quit if you're done!".format(self.recs[0])
                 self.recs.pop(0)
@@ -533,7 +552,7 @@ class Chatbot:
     # 5. Open-ended                                                            #
     ############################################################################
 
-    def function1(self, line: str) -> List[str]:
+    def ID_movies(self, line: str) -> List[int]:
         """
         Identity movies without quotation marks and incorrect capitalization.
         Only checks for movie titles that are more than 4 characters long.
@@ -548,12 +567,47 @@ class Chatbot:
                 continue
         return idxs
 
-    def function2():
+    def rec_emotion_based(self, user_ratings: dict, user_emotion, num_return) -> List[str]:
         """
-        TODO: delete and replace with your function.
-        Be sure to put an adequate description in this docstring.  
+        This function takes user_ratings and user_emotion and returns the list of
+        the recommended movie titles.
+
+        Arugments:
+            - user_ratings (dict): 
+                - keys are indices of movies 
+                  (corresponding to rows in both data/movies.txt and data/ratings.txt) 
+                - values are 1, 0, and -1 corresponding to positive, neutral, and 
+                  negative sentiment respectively
+            - user_emotion (int):
+                - 1) Happy, 2) Sad, 3) Angry, 4) Bored 
+            - num_return (optional, int): The number of movies to recommend
+
+        
         """
-        pass  
+        user_input = np.zeros(len(self.ratings))
+        for key in user_ratings:
+            user_input[key] = user_ratings.get(key)
+        recs = util.recommend(user_input, self.ratings, num_return)
+        result = []
+        for i in recs:
+            movie_genre = self.titles[i][1]
+            if user_emotion == 1: # Happy
+                if "Romance" in movie_genre or "Drama" in movie_genre or "Adventure" in movie_genre:
+                    result.append(self.titles[i][0])
+                self.emotion_string = "Hmm...Perhaps some Romance/ Drama or Adventure?"
+            elif user_emotion == 2: # Sad
+                if "Comedy" in movie_genre or "Animation" in movie_genre or "Children" in movie_genre:
+                    result.append(self.titles[i][0])
+                self.emotion_string = "Hmm...Perhaps some Comedy or Animation/Children?"
+            elif user_emotion == 3: # Angry
+                if "Action" in movie_genre:
+                    result.append(self.titles[i][0])
+                self.emotion_string = "Hmm...Perhaps some Action?"
+            elif user_emotion == 4: # Bored
+                if "Thriller" in movie_genre or "Mystery" in movie_genre:
+                    result.append(self.titles[i][0])
+                self.emotion_string = "Hmm...Perhaps some Thriller or Mystery?"
+        return result
 
     def function3(): 
         """
@@ -566,6 +620,5 @@ if __name__ == '__main__':
     print('To run your chatbot in an interactive loop from the command line, '
           'run:')
     print('    python3 repl.py')
-
 
 
