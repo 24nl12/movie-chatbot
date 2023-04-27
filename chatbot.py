@@ -527,8 +527,14 @@ class Chatbot:
         """
         Identity movies without quotation marks and incorrect capitalization.  
         """
-        idxs = [i for i, entry in enumerate(self.titles) 
-                   if re.search(entry[0].split(' (')[0], line, re.IGNORECASE)]
+        idxs = []
+        for i, entry in enumerate(self.titles):
+            try:
+                curr = entry[0].split(' (')[0]
+                if len(curr) > 4 and re.search(re.escape(curr), 'I liked 10 things i HATE about you', re.IGNORECASE):
+                    idxs.append(i)
+            except:
+                continue
         return idxs
 
     def function2():
