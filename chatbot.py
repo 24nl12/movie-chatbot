@@ -130,9 +130,19 @@ class Chatbot:
         for title in self.extract_titles(line):
             # get indexes of all relevant movies from line
             temp.extend(self.find_movies_idx_by_title(title))
-        # if there are no movies being referenced currently, add the movies from current line
         if len(self.curr_movie) == 0:
-            self.curr_movie = temp
+            if len(temp) > 0:
+                # if there are no movies being referenced currently, add the movies from current line
+                self.curr_movie = temp
+            else:
+                # if there are no movies being referenced currently and there are no movies within
+                # double quotes in the current line, check if there are movies titles in the current
+                # line that aren't within double quotes.
+                self.curr_movie = self.function1(line)
+                # since some movie titles contain sentiment words (eg. 10 Things I Hate About You),
+                # set pred = 0. This means that the chatbot will ask for the user's thoughts on the 
+                # movie even if they were already provided as part of the current line.  
+                pred = 0
         if ":quit" in line:
             response = self.goodbye()
         # ask for user's thoughts on movies until we have ratings for 5
@@ -525,13 +535,14 @@ class Chatbot:
 
     def function1(self, line: str) -> List[str]:
         """
-        Identity movies without quotation marks and incorrect capitalization.  
+        Identity movies without quotation marks and incorrect capitalization.
+        Only checks for movie titles that are more than 4 characters long.
         """
         idxs = []
         for i, entry in enumerate(self.titles):
             try:
                 curr = entry[0].split(' (')[0]
-                if len(curr) > 4 and re.search(re.escape(curr), 'I liked 10 things i HATE about you', re.IGNORECASE):
+                if len(curr) > 4 and re.search(re.escape(curr), line, re.IGNORECASE):
                     idxs.append(i)
             except:
                 continue
