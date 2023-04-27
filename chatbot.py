@@ -29,13 +29,13 @@ class Chatbot:
         # TODO: put any other class variables you need here
         self.count_vectorizer = None
         self.model = None
-        self.curr_movie = []
-        self.movie_count = 0
-        self.recs = []
-        self.user_ratings = dict()
+        self.curr_movie = [] # movie that is currently being referenced
+        self.movie_count = 0 # number of movies that we have user ratings for
+        self.recs = [] # list of recommendations based on user ratings
+        self.user_ratings = dict() # dictionary for storing user ratings
 
         # Train the classifier
-        self.train_logreg_sentiment_classifier() 
+        self.train_logreg_sentiment_classifier() # train the classifier
 
     ############################################################################
     # 1. WARM UP REPL                                                          #
@@ -78,7 +78,7 @@ class Chatbot:
         # TODO: Write a short farewell message                                 #
         ########################################################################
 
-        goodbye_message = "It was fun chatting with you! I hope you enjoy my reccommendation."
+        goodbye_message = "It was fun chatting with you! I hope you enjoy my recommendations."
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -125,50 +125,63 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
-        pred = self.predict_sentiment_rule_based(line)
+        pred = self.predict_sentiment_rule_based(line) # predict sentiment based on line
         temp = []
         for title in self.extract_titles(line):
+            # get indexes of all relevant movies from line
             temp.extend(self.find_movies_idx_by_title(title))
+        # if there are no movies being referenced currently, add the movies from current line
         if len(self.curr_movie) == 0:
             self.curr_movie = temp
-        if self.movie_count < 5:
+        if ":quit" in line:
+            response = self.goodbye()
+        # ask for user's thoughts on movies until we have ratings for 5
+        elif self.movie_count < 5:
+            # if there is one reference movie, get a rating for it
             if len(self.curr_movie) == 1:
                 title = self.titles[self.curr_movie[0]][0] 
                 if pred > 0:
                     self.movie_count += 1
+                    # store the rating
                     self.user_ratings[self.curr_movie[0]] = pred
+                    # reset list of movies being referenced 
                     self.curr_movie = []
-                    response = "Oh, you liked '{}'? Tell me about some other movies.".format(title)
+                    response = "Oh, you like '{}'? Tell me about some other movies.".format(title)
+                    # transition response if we reach 5 user ratings
                     if self.movie_count == 5:
                         response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
 
                 elif pred < 0:
                     self.movie_count += 1
+                    # store the rating
                     self.user_ratings[self.curr_movie[0]] = pred
+                    # reset list of movies being referenced
                     self.curr_movie = []
-                    response = "Wow, you really didn't like '{}'. What about some other movies?".format(title)
+                    response = "Wow, you really don't like '{}'. What about some other movies?".format(title)
+                    # transition response if we reach 5 user ratings
                     if self.movie_count == 5:
                         response = "I'll now recommend you a movie. Type :quit if you don't want a recommendation."
                 else:
-                    response = "Hmm, I can't really tell whether you liked '{}' or not. Can you tell me a little more about your thoughts on it?".format(title)
+                    # continue asking about current movie if we can't make a prediction from line 
+                    response = "Hmm, I can't really tell whether you like '{}' or not. Can you tell me a little more about your thoughts on it?".format(title)
             elif len(self.curr_movie) == 0:
+                # if there is no reference movie, ask for one.
                 response = "Why don't you tell me about a movie you've seen recently?"
             else:
-                movies = ""
+                # if there is more than one movie, determine which one the user is talking about 
                 self.curr_movie = self.disambiguate_candidates(line, self.curr_movie)
                 if len(self.curr_movie) > 1:
-                    for movie in self.curr_movie:
-                        movies += self.titles[movie][0] + ", "
-                    response = "Which of these movies did you mean? '{}'.".format(movies[:-2])
+                    response = "Which of these movies did you mean? '{}'.".format(", ".join(self.titles[i][0] for i in self.curr_movie))
                 else:
                     response = "You're talking about '{}'. Can I ask whether you liked it or not?".format(self.titles[self.curr_movie[0]][0])
+        # Once we have 5 user ratings, generate recommendations.
         else:
             if len(self.recs) == 0:
+                # generate recommendations
                 self.recs = self.recommend_movies(self.user_ratings, num_return=100)
+                # recommend the top recommendation
                 response = "I'd recommend '{}'. I think you'll like it. Would you like another recommendation? Type :quit if you're done!".format(self.recs[0])
                 self.recs.pop(0)
-            elif ":quit" in line:
-                response = self.goodbye()
             else:
                 response = "I'd also recommend '{}'. Would you like another recommendation?. Type :quit if you're done!".format(self.recs[0])
                 self.recs.pop(0)
@@ -510,12 +523,13 @@ class Chatbot:
     # 5. Open-ended                                                            #
     ############################################################################
 
-    def function1():
+    def function1(self, line: str) -> List[str]:
         """
-        TODO: delete and replace with your function.
-        Be sure to put an adequate description in this docstring.  
+        Identity movies without quotation marks and incorrect capitalization.  
         """
-        pass
+        idxs = [i for i, entry in enumerate(self.titles) 
+                   if re.search(entry[0].split(' (')[0], line, re.IGNORECASE)]
+        return idxs
 
     def function2():
         """
