@@ -8,6 +8,7 @@ from sklearn import linear_model
 from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict, Counter
 from typing import List, Dict, Union, Tuple
+from spellchecker import SpellChecker
 
 import util
 
@@ -126,7 +127,7 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
-        pred = self.predict_sentiment_rule_based(line)
+        pred = self.predict_sentiment_rule_based(self.spellCheck(line))
         temp = []
         for title in self.extract_titles(line):
             # get indexes of all relevant movies from line
@@ -609,11 +610,32 @@ class Chatbot:
                 self.emotion_string = "Hmm...Perhaps some Thriller or Mystery?"
         return result
 
-    def function3(): 
+    def spellCheck(self, line:str): 
         """
-        Any additional functions beyond two count towards extra credit  
+        This function takes a line and corrects for any spelling errors that have occurred based on python's SpellChecker
+        
+        Arguments: 
+            - line: input line recieved from the user to be checked for any spelling errors
         """
-        pass 
+        # initialize spellchecker
+        spell = SpellChecker()
+        # split up the words in a line to be examined
+        reg = '"?(\w+)"?'
+        words = re.findall(reg, line)
+        correct = ''
+        # find the mispellled words
+        misspelled = spell.unknown(words)
+        # retrieve their corrections
+        for word in misspelled:
+            replace = words.index(word)
+            words[replace] = spell.correction(word)
+            correct = ' '.join(words)
+
+        return correct
+            
+
+
+
 
 
 if __name__ == '__main__':
