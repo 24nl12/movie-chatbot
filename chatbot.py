@@ -8,7 +8,7 @@ from sklearn import linear_model
 from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict, Counter
 from typing import List, Dict, Union, Tuple
-from spellchecker import SpellChecker
+
 
 import util
 
@@ -611,6 +611,7 @@ class Chatbot:
         return result
 
     def spellCheck(self, line:str): 
+        from spellchecker import SpellChecker
         """
         This function takes a line and corrects for any spelling errors that have occurred based on python's SpellChecker
         
