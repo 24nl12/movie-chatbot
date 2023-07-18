@@ -3,13 +3,10 @@ Code Repository for "Nolan Movie Chatbot" by Nawon Lee, Minh-Huy Le, and Karthik
 
 ## Updated 2.0
 1. Identify movies without quotation marks and incorrect capitalization
-	* Example: Users type 'I liked 10 things i HATE about you'
-2. Recommendations based on the user's mood
-	* Example: Users type 'I am angry'
-3. Deal with simple spelling mistakes
-	* Example: User types 'I liek "Avatar"' and the bot is able to correct "liek" to "like"
+2. Provides recommendations based on the user's mood/ emotions
+3. Deals with simple spelling mistakes
 
---
+<hr>
 
 The goal of this chatbot is to provide movie recommendations to a user. In order to do so, the chatbot will need to:
  
