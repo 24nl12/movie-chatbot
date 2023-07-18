@@ -9,6 +9,8 @@ Code Repository for "Nolan Movie Chatbot" by Nawon Lee, Minh-Huy Le, and Karthik
 3. Deal with simple spelling mistakes
 	* Example: User types 'I liek "Avatar"' and the bot is able to correct "liek" to "like"
 
+--
+
 The goal of this chatbot is to provide movie recommendations to a user. In order to do so, the chatbot will need to:
  
 1. Extract and transform a user's input 
