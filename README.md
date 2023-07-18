@@ -1,29 +1,21 @@
-# Homework 6: Chatbots
+# Personalized Movie Recommender
+Code Repository for "Nolan Movie Chatbot" by Nawon Lee, Minh-Huy Le, and Karthik Subbiah.
 
-The goals of this homework is to build a dialogue system that makes movie recommendations to a user. You will use a frame-based approach and implement both rule-based and machine-learning based modules.  
+## Updated 2.0
+1. Identify movies without quotation marks and incorrect capitalization
+	* Example: Users type 'I liked 10 things i HATE about you'
+2. Recommendations based on the user's mood
+	* Example: Users type 'I am angry'
+3. Deal with simple spelling mistakes
+	* Example: User types 'I liek "Avatar"' and the bot is able to correct "liek" to "like"
 
-
-## Submission instructions
-
-- You must work in your final project groups. 
-- Your submitted solution and code must be your group's work alone. Copying and pasting a solution from the internet or another source is considered a violation of the **honor code**.
-- Because this is a group submission, there are no late days and no late submissions will be accepted. 
-- Submit one submission per group to gradescope. To submit run the following command on the command line from this folder: 
-	
-	```
-	./generate_submission.sh 
-	```
-	Then submit `submission.zip` to Gradescope. 
-
-## Goal with example 
-
-The goal of your chatbot is to provide movie recommendations to a user. In order to do so, the chatbot will need to:
+The goal of this chatbot is to provide movie recommendations to a user. In order to do so, the chatbot will need to:
  
 1. Extract and transform a user's input 
 2. Predict the sentiment of a user's input about movies 
 3. Gather 5 sentiment ratings from the user to predict a new movie 
 
-Here's an example of what an interaction between your chatbot and a human user might look like. You goal is to emulate this functionality (but chatbot's exact wording can change). 
+Here's an example of what an interaction between your chatbot and a human user might look like. 
 
 ```
 chatbot> Hi! I'm MovieBot! I'm going to recommend a movie to you. First I will ask you about your taste in movies. 
@@ -78,112 +70,6 @@ user> :quit
 chatbot> Thanks! It was fun chatting with you!  
 
 ```
-Your goal is to write the code that will interact with users in this manner and beyond. 
-
-## REPL 
-
-Dialogue systems can be decomposed into four primary modules ([Norvig 1991](https://github.com/norvig/paip-lisp)) which are called the Read-Eval-Print-Loop (REPL): 
-
-1. Read the input.
-2. Extract relevant information from the input, which can be domain specific – as in our movie recommender chatbot.
-3. Transform the input into a response – users normally expect a response in the given domain.
-4. Print the response.
-
-In `repl.py` we have implemented 1 and 4 for you. In `chatbot.py` you'll implement 2 and 3. 
-
-## Getting started
-
-To get started: 
-
-1. Activate `cs375` by typing on the command line 
-	
-	```
-	conda activate cs375
-	```
-
-1. In this directory, type the following command to start the chatbot 
- 
-	```
-	python repl.py 
-	```
-
-1. You can test your chatbot with `.txt` files containing the user input as follows: 
-
-	```
-	python repl.py < testing/simple.txt
-	```
-	
-	As you can see, each line of `simple.txt` is entered consecutively into the chatbot. However, the script terminates once it hits `:quit` and any lines afterwards will not be executed.
-	
-	Files like `simple.txt` are useful when you want to test the same script multiple times and we encourage you to write your own. We will be manully testing your code with similar (but not the same) scripts as the ones provided in `testing/`.
-
-4. Now it's your turn. Open the `chatbot.py` file and follow the instructions in the function docstrings. You can see more about the grading breakdown below. 
-
-	
-## Grading
-
-Your grade will consist of your work for the following functions in `chatbot.py` and `ethics.py`. Remember, HW6 is double the points of previous homeworks. 
-
-| Part | Functions to implement | Points | Auto-graded?|
-| -------- | -------- | -------- | -------- |
-| 1 - Warm-up    | `intro()`, `greeting()`, and `goodbye()`  | 5 | No |
-| 2 - Extracting and Transforming | `process()` | 20 | No - see below |
-| | `extract_titles()` | 5 | Yes |
-| | `find_movies_idx_by_title()` | 5 | Yes |
-| | `disambiguate_candidates()` | 5 | Yes | 
-| | ||**Checkpoint (Parts 1&2): Due Fri April 21 3:59pm** |
-| 3 - Sentiment | `predict_sentiment_rule_based()` | 5 | Yes|
-| | `train_logreg_sentiment_classifier()` | 10 | Yes | 
-| | `predict_sentiment_statistical()` | 4 | Yes | 
-| 4 - Recommend |`recommend_movies()` | 2 | Yes|
-| 5 - Open-ended | `function1()` | 10 | No - see below | 
-| | `function2()` | 10 | No - see below | 
-| | Additional functions | Extra credit | No | 
-| 6 - Ethics | Response in `ethics.py` | 10 | No| 
-||||**Full assigment due: Fri April 28 3:59pm**||
-
-By Friday, April 21, you must submit code for Parts 1 & 2 to the Gradescope autograder. A failure to do so by the checkpoint date will result in a loss of the autograder points for Part 2. 
-
-### Grading `process()`
-
-We will be manully testing your code with similar (but not the same) scripts as the ones provided in `testing/`.
-
-You'll have to choose whether your implementation of `process()` uses the machine-learning or rule-based approach to sentiment that you implement. There are advantages and disadvantages to both. 
-
-Make sure your bot:
-
-- Communicates to the user the extracted sentiment and movie 
-- Speaks reasonably fluently
-- Fail gracefully 
-	- Bot never crashes 
-	- Asks for clarification
-- Gives recommendations (asks automatically after user provides 5 data points).
-The bot should give one recommendation at a time, each time giving the user a chance to say "yes" to hear another or "no" to finish.
-
-
-### Grading Part 5 - Open Ended
-
-For `function1()`, you must choose from the following options: 
-
-1. Identify movies without quotation marks and incorrect capitalization
-	- Example: Users type `'I liked 10 things i HATE about you'`
-1. Identify and respond to emotions 
-	- Example: Users type `'I am angry'`
-1. Extract sentiment for multiple movies in a single user input 
-	- Examples: Users type `'I didn't like either "I, Robot" or "Ex Machina".'` or `'I liked "Titanic (1997)", but "Ex Machina" was not good.'`
-1. Deal with simple spelling mistakes
-	- Example: User types `'I liek "Avatar"'` and the bot is able to correct `"liek"` to `"like"` 
-1. Deal with articles in movie titles
-	- Example: User types  `'I liked "An American in Paris"'` and your chatbot knows this matches `'American in Paris, An (1951)'` from the movie databse.
-1. Use the movie categories from `data/movies.txt`, e.g. "Action" or "Thriller", as part of the input and recommendation to the user.  
-
-
-For `function2()`, you may implement an additional one of the choices listed above or come up with a functionality (of equal implementation difficulty) that your group believes enhances the chatbot. Please document the functionality in the docstring so that we can evaluate and grade it properly. 
-
-**Extra credit.** If you implement any functions beyond two, these will count towards extra credit. Feel free to go beyond functionality of just movie recommendations. You can put any additional data or code you need beyond the starter code in `deps/` folder and this will be zipped with your submission when you run `generate_submission.sh`. 
-
-
-Similar to previous assignments: Extra credit can only help you and will not hurt you. At the end of the semester, if you have a borderline grade, your grade could be increased given your efforts on extra credit.
 
 ## Data
 
@@ -221,40 +107,6 @@ We also provide `data/movies.txt`, a list with 9125 movie titles and their assoc
 ['Blade Runner (1982)', 'Action|Sci-Fi|Thriller']
 ```
 
-
-##  Tips for developing, testing and debugging 
-
-### Collaborating
-
-Since you will be developing this code in a group, we highly recommend you use a private repository on `Github` and add each other as collaborators. Use version control and `git pull` and `git push` to share code. 
-
-### Developing
-
-We *highly* suggest you open the `scratch.ipynb` (provided in this repository) in a Jupyter Notebook and use it to help speed-up development. This is an easy way to check the outputs of chunks of code before you put them into functions.
-
-### Debug mode 
-The debug method in the `Chatbot()` class can be used to print out debug information about the internal state of the chatbot that you may consider relevant, in a way that is easy to understand. This is helpful while developing the assignment, but will not be graded. To enable debug info, type in the chatbot session in the REPL
-
-```
-:debug on
-```
-and type
-
-```
-:debug off
-```
-to disable it. 
-
-
-### Testing
-
-Try how your chatbot does with the scripts in `testing/`. Recall, you can test these via 
-
-```
-python repl.py < testing/simple.txt
-```
-
-Write some of your own user conversations that you want your bot to do well on and store these in `testing/`.
 
 
 
