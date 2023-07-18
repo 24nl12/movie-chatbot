@@ -18,8 +18,9 @@ The goal of this chatbot is to provide movie recommendations to a user. In order
 Here's an example of what an interaction between your chatbot and a human user might look like. 
 
 ```
-chatbot> Hi! I'm MovieBot! I'm going to recommend a movie to you. First I will ask you about your taste in movies. 
-Tell me about a movie that you have seen.
+chatbot> Hi! I'm Chatstopher Nolan. I'm going to reccommend the perfect movie. 
+        To do that, I need you to tell me about some movies you've liked and disliked. 
+        Tell me about a movie you've seen!
 
 user> I really liked Moneyball.
 ```
